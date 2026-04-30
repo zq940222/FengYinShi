@@ -1,0 +1,15 @@
+# Cocos Creator 生成目录（不入库）
+library/
+temp/
+local/
+.creator/
+
+# 构建产物
+build/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+*.log

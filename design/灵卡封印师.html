@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>灵卡封印师 · 游戏设计</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat+Brush&family=Nunito:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #f0eee9; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="screens-gameplay.jsx"></script>
+<script type="text/babel" src="screens-character.jsx"></script>
+<script type="text/babel" src="screens-flow.jsx"></script>
+<script type="text/babel" src="screens-misc.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// Wrap each screen in an iPhone bezel
+function Phone({ dark, children, label }) {
+  return (
+    <div data-screen-label={label} style={{ display: 'flex', justifyContent: 'center' }}>
+      <IOSDevice dark={dark}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+          {children}
+        </div>
+        <IOSStatusBar dark={dark}/>
+      </IOSDevice>
+    </div>
+  );
+}
+
+const PHONE_W = 402;
+const PHONE_H = 874;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "heroine": "sora",
+  "skinA": "pink",
+  "skinB": "teal"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // Allow user to swap heroine across all screens via tweaks
+  const heroIdx = HEROINES.findIndex(h => h.id === tweaks.heroine);
+  const activeHero = HEROINES[heroIdx >= 0 ? heroIdx : 0];
+  // Mutate the global hero[0] used by screens (simple approach for prototype)
+  HEROINES[0] = activeHero;
+
+  return (
+    <React.Fragment>
+      <DesignCanvas>
+        <DCSection id="readme" title="灵卡封印师" subtitle="原创魔法少女 + 封印灵卡 · Roguelike 探险 · 搜打撤循环 · 两个视觉方向并排比较">
+          <DCArtboard id="readme-card" label="设计说明" width={420} height={520}>
+            <ReadmeCard/>
+          </DCArtboard>
+          <DCArtboard id="systems-A" label="A · 粉紫扁平卡通 · 系统总览" width={420} height={520}>
+            <SystemA/>
+          </DCArtboard>
+          <DCArtboard id="systems-B" label="B · 深青金水彩 · 系统总览" width={420} height={520}>
+            <SystemB/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="core" title="主玩法 · 探索 + 撚退" subtitle="搜打撤循环 — 计时 / 背包 / 出口三重压力">
+          <DCArtboard id="game-A" label="A · 粉紫扁平卡通" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Gameplay"><GameplayA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="game-B" label="B · 深青金水彩" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Gameplay"><GameplayB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="char" title="角色 / 卡牌装备" subtitle="契约工坊 — 编辑灵卡套牌、查看羁绊共鸣">
+          <DCArtboard id="char-A" label="A · 契约工坊 (粉紫)" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Character"><CharacterA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="char-B" label="B · 契约工坊 (深青)" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Character"><CharacterB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="menu" title="主菜单" subtitle="启动屏 — 卡牌叠角度叙事">
+          <DCArtboard id="menu-A" label="A · 主菜单" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Menu"><MenuA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="menu-B" label="B · 主菜单" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Menu"><MenuB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="map" title="关卡选择 · 梦境地图" subtitle="夜空连线节点 — 已通关 · 当前 · 锁定">
+          <DCArtboard id="map-A" label="A · 关卡选择" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Map"><LevelSelectA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="map-B" label="B · 关卡选择" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Map"><LevelSelectB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="result" title="胜利结算" subtitle="星评 + 战利品 + 奖励">
+          <DCArtboard id="vic-A" label="A · 封印成功" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Victory"><VictoryA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="vic-B" label="B · SEALED" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Victory"><VictoryB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="shop" title="商店 / 道具">
+          <DCArtboard id="shop-A" label="A · 樱花商店" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Shop"><ShopA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="shop-B" label="B · 星河集市" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Shop"><ShopB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="tutorial" title="新手引导" subtitle="羽笔小灵教学 — 聚焦 + 气泡">
+          <DCArtboard id="tut-A" label="A · 教学" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Tutorial"><TutorialA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="tut-B" label="B · 教学" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Tutorial"><TutorialB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="ach" title="成就 + 排行榜">
+          <DCArtboard id="ach-A" label="A · 成就" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Achievements"><AchA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="rank-A" label="A · 本周榜单" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Ranks"><RankA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="ach-B" label="B · 星之纪" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Achievements"><AchB/></Phone>
+          </DCArtboard>
+          <DCArtboard id="rank-B" label="B · 群星谱" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Ranks"><RankB/></Phone>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="pause" title="暂停 / 设置">
+          <DCArtboard id="pause-A" label="A · 暂停" width={PHONE_W} height={PHONE_H}>
+            <Phone label="A-Pause"><PauseA/></Phone>
+          </DCArtboard>
+          <DCArtboard id="pause-B" label="B · PAUSED" width={PHONE_W} height={PHONE_H}>
+            <Phone dark label="B-Pause"><PauseB/></Phone>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="角色">
+          <TweakRadio
+            label="主角"
+            value={tweaks.heroine}
+            options={HEROINES.map(h => ({ value: h.id, label: h.name }))}
+            onChange={v => setTweak('heroine', v)}
+          />
+          <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+            头像与发色会同步更新到所有截图
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+
+// ─────────────────────────────────────────
+// README + system overview cards
+// ─────────────────────────────────────────
+function ReadmeCard() {
+  return (
+    <div style={{ width: '100%', height: '100%', padding: 26, background: '#FAF6EE',
+      fontFamily: '"Fredoka", system-ui', color: '#2A1B30',
+      display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#8C70CF' }}>ORIGINAL IP · 设计说明</div>
+      <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.1, marginTop: 6 }}>灵卡封印师</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#5C3F66', marginTop: 4 }}>魔法少女 + 封印灵卡 · 搜打撤 Roguelike</div>
+      <hr style={{ margin: '14px 0', border: 'none', borderTop: '1.5px dashed #2A1B3030' }}/>
+      <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+        <p style={{ margin: '0 0 8px' }}><b>核心循环</b>：进入「梦境」探索 → 封印散落的灵卡 → 在夜幕降临前撤离。每次出击携带 3-5 张契约灵卡构成套牌。</p>
+        <p style={{ margin: '0 0 8px' }}><b>三重压力</b>：⏳ 倒计时（夜幕） · 🎒 8 格背包（取舍） · 🚪 限定撤离点（探索）</p>
+        <p style={{ margin: '0 0 8px' }}><b>失败惩罚</b>：未撤离则丢失本夜战利，已契约的灵卡保留。</p>
+        <p style={{ margin: '0 0 8px' }}><b>进度</b>：解锁更深的章节、更多 SSR 灵卡、更高的契约羁绊加成。</p>
+      </div>
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: '#8C70CF' }}>VARIATIONS</div>
+        <div style={{ display: 'flex', gap: 8, fontSize: 11, fontWeight: 600 }}>
+          <div style={{ flex: 1, padding: 8, background: '#FCE8F0', border: '1.5px solid #2A1B30', borderRadius: 10 }}>
+            <b>A.</b> 粉 + 薰衣草 · 扁平卡通 · 粗轮廓 · 弹跳节奏
+          </div>
+          <div style={{ flex: 1, padding: 8, background: '#162940', border: '0.5px solid #E8B14C', color: '#E8B14C', borderRadius: 2 }}>
+            <b>B.</b> 深青 + 金 · 水彩 + 手绘线 · 神秘星空
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SystemA() {
+  const t = THEME_A;
+  return (
+    <div style={{ width: '100%', height: '100%', padding: 18, background: t.bg,
+      fontFamily: t.font, color: t.outline, overflow: 'auto' }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3 }}>VARIANT A</div>
+      <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1, marginTop: 4 }}>柔美梦幻</div>
+      <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.7 }}>粉色 + 薰衣草 · 扁平卡通 · 粗轮廓</div>
+
+      <div style={{ marginTop: 14, fontSize: 11, fontWeight: 800 }}>调色板</div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+        {[t.primary, t.primaryDeep, t.secondary, t.accent, t.mint, t.outline].map(c => (
+          <div key={c} style={{ flex: 1, height: 36, background: c,
+            border: `${t.outlineWidth}px solid ${t.outline}`, borderRadius: 8 }}/>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 11, fontWeight: 800 }}>按钮</div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+        <StickerBtn theme={t} color={t.primary} size="sm">主操作</StickerBtn>
+        <StickerBtn theme={t} color={t.secondary} size="sm">次操作</StickerBtn>
+        <StickerBtn theme={t} color={t.accent} size="sm" icon="star">奖励</StickerBtn>
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 11, fontWeight: 800 }}>灵卡 · 三档稀有度</div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 6, justifyContent: 'space-around' }}>
+        <SpiritCardA card={CARDS[0]} size="sm"/>
+        <SpiritCardA card={CARDS[1]} size="sm"/>
+        <SpiritCardA card={CARDS[3]} size="sm"/>
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 11, fontWeight: 800 }}>排版</div>
+      <div style={{ marginTop: 4, padding: 10, background: '#fff', border: `${t.outlineWidth}px solid ${t.outline}`, borderRadius: 12, boxShadow: `0 3px 0 ${t.outline}` }}>
+        <div style={{ fontSize: 18, fontWeight: 800 }}>Fredoka 800 · 标题</div>
+        <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.75 }}>Fredoka 700 · 副标题</div>
+        <div style={{ fontSize: 11, fontWeight: 600 }}>Fredoka 600 · 正文 / 提示</div>
+      </div>
+    </div>
+  );
+}
+
+function SystemB() {
+  const t = THEME_B;
+  return (
+    <div style={{ width: '100%', height: '100%', padding: 18, position: 'relative',
+      background: `radial-gradient(ellipse at 50% 0%, #1F3357 0%, #0F1A2E 60%, #050A18 100%)`,
+      fontFamily: t.fontBody, color: t.starlight, overflow: 'auto' }}>
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.7,
+        backgroundImage: `radial-gradient(circle at 18% 22%, #fff 0 0.7px, transparent 1.5px),
+                          radial-gradient(circle at 72% 18%, ${t.primary} 0 1px, transparent 1.5px),
+                          radial-gradient(circle at 32% 60%, #fff 0 0.8px, transparent 1.5px),
+                          radial-gradient(circle at 88% 72%, ${t.starlight} 0 1px, transparent 1.5px)` }}/>
+      <div style={{ position: 'relative' }}>
+        <div style={{ fontSize: 9, color: t.primary, letterSpacing: 4 }}>VARIANT B</div>
+        <div style={{ fontFamily: t.fontDisplay, fontSize: 28, color: t.primary, lineHeight: 1, letterSpacing: 2, marginTop: 6 }}>神秘星空</div>
+        <div style={{ fontSize: 10, color: t.starlight, opacity: 0.7, letterSpacing: 2, marginTop: 4 }}>DEEP TEAL · GOLD · WATERCOLOR</div>
+
+        <div style={{ marginTop: 14, fontFamily: t.fontDisplay, fontSize: 14, color: t.primary, letterSpacing: 2 }}>调色板</div>
+        <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+          {[t.primary, t.primaryDeep, t.secondary, t.accent, t.starlight, t.bg].map(c => (
+            <div key={c} style={{ flex: 1, height: 32, background: c, border: `0.5px solid ${t.primary}80` }}/>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 14, fontFamily: t.fontDisplay, fontSize: 14, color: t.primary, letterSpacing: 2 }}>按钮</div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+          <InkBtn theme={t} size="sm">PRIMARY</InkBtn>
+          <InkBtn theme={t} ghost size="sm">GHOST</InkBtn>
+          <InkBtn theme={t} size="sm" icon="star">REWARD</InkBtn>
+        </div>
+
+        <div style={{ marginTop: 14, fontFamily: t.fontDisplay, fontSize: 14, color: t.primary, letterSpacing: 2 }}>灵卡 · 三档</div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 6, justifyContent: 'space-around' }}>
+          <SpiritCardB card={CARDS[0]} size="sm"/>
+          <SpiritCardB card={CARDS[1]} size="sm"/>
+          <SpiritCardB card={CARDS[3]} size="sm"/>
+        </div>
+
+        <div style={{ marginTop: 14, fontFamily: t.fontDisplay, fontSize: 14, color: t.primary, letterSpacing: 2 }}>排版</div>
+        <div style={{ marginTop: 4, padding: 10, background: 'rgba(15,26,46,0.6)', border: `0.5px solid ${t.primary}` }}>
+          <div style={{ fontFamily: t.fontDisplay, fontSize: 22, color: t.primary, letterSpacing: 1 }}>Caveat Brush · 标题</div>
+          <div style={{ fontFamily: t.fontDisplay, fontSize: 14, color: t.starlight, letterSpacing: 1.5 }}>副标题 · DISPLAY</div>
+          <div style={{ fontSize: 11, color: t.starlight, opacity: 0.85 }}>Nunito 600 · 正文 body text</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
