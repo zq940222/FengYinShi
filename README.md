@@ -28,6 +28,14 @@ git lfs pull   # 拉取图片资源（约 220MB）
 
 用 Cocos Creator 打开 `FengYinShi/` 目录即可，无需额外安装依赖。
 
+> **换电脑完整流程**
+> ```bash
+> git clone https://github.com/zq940222/FengYinShi.git
+> cd FengYinShi
+> git lfs pull        # 拉取 220MB 图片资源
+> ```
+> 然后用 Cocos Creator 3.8.8 打开该目录，资源 UUID 已随 `.meta` 文件一起提交，引用不会丢失。
+
 ## 项目结构
 
 ```
